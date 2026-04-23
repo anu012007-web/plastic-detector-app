@@ -1,16 +1,26 @@
 import streamlit as st
 import torch
+import torch.nn as nn
 import torchvision.models as models
 import torchvision.transforms as transforms
 from PIL import Image
-import urllib.request
 
 # Page config
 st.set_page_config(page_title="Plastic Detector AI", page_icon="🌍")
 
 @st.cache_resource
 def load_model():
-    model = models.mobilenet_v2(pretrained=True)
+    model = models.mobilenet_v2(pretrained=False)
+    num_ftrs = model.classifier[1].in_features
+    model.classifier = nn.Sequential(
+        nn.Dropout(0.2),
+        nn.Linear(num_ftrs, 2)
+    )
+    # Load the custom weights
+    try:
+        model.load_state_dict(torch.load('plastic_detector_custom.pth', map_location=torch.device('cpu')))
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
     model.eval()
     return model
 
@@ -23,15 +33,6 @@ transform = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
-# Plastic mapping
-PLASTIC_ITEMS = {
-    'water_bottle': '💧 Water Bottle',
-    'plastic_bag': '🛍️ Plastic Bag',
-    'plastic_cup': '🥤 Plastic Cup',
-    'plastic_bottle': '🍾 Plastic Bottle',
-    'straw': '🥤 Plastic Straw',
-}
-
 RECYCLING_TIPS = {
     'water_bottle': '♻️ Rinse, remove cap, crush, recycle in blue bin',
     'plastic_bag': '🛍️ Take to grocery store drop-off - NOT curbside',
@@ -40,27 +41,8 @@ RECYCLING_TIPS = {
     'straw': '🚫 Single-use straws go in trash - use reusable instead',
 }
 
-@st.cache_data
-def load_labels():
-    url = "https://raw.githubusercontent.com/pytorch/hub/master/imagenet_classes.txt"
-    try:
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req) as f:
-            labels = [line.decode().strip() for line in f.readlines()]
-    except:
-        labels = [f"class_{i}" for i in range(1000)]
-    return labels
-
-labels = load_labels()
-
-def is_plastic_item(prediction_label):
-    """Check if predicted item is plastic"""
-    label_lower = prediction_label.lower()
-    plastic_keywords = ['bottle', 'bag', 'cup', 'straw', 'container', 'wrapper', 'jug']
-    return any(keyword in label_lower for keyword in plastic_keywords)
-
 def predict_image(image):
-    """Predict if image contains plastic"""
+    """Predict if image contains plastic using custom model"""
     # Convert to PIL if not already
     if not isinstance(image, Image.Image):
         image = Image.open(image).convert('RGB')
@@ -75,26 +57,25 @@ def predict_image(image):
         outputs = model(img_tensor)
         probabilities = torch.nn.functional.softmax(outputs[0], dim=0)
     
-    # Get top predictions
-    top_probs, top_indices = torch.topk(probabilities, 5)
+    # Class 0: non_plastic, Class 1: plastic
+    conf_non_plastic = probabilities[0].item()
+    conf_plastic = probabilities[1].item()
     
-    results = []
-    is_plastic = False
-    plastic_type = None
+    is_plastic = conf_plastic > conf_non_plastic
+    confidence = conf_plastic if is_plastic else conf_non_plastic
     
-    for i in range(5):
-        label = labels[top_indices[i]]
-        confidence = top_probs[i].item()
-        results.append((label, confidence))
-        
-        if is_plastic_item(label) and confidence > 0.3:
-            is_plastic = True
-            for key in PLASTIC_ITEMS:
-                if key.replace('_', ' ') in label:
-                    plastic_type = key
-                    break
-    
-    return results, is_plastic, plastic_type
+    return is_plastic, confidence
+
+def display_results(is_plastic, confidence):
+    if is_plastic:
+        st.error(f"🔴 **PLASTIC DETECTED** (Confidence: {confidence*100:.1f}%)")
+        st.info("♻️ Please ensure you recycle plastic items properly!")
+        with st.expander("View Specific Recycling Tips"):
+            for item, tip in RECYCLING_TIPS.items():
+                st.write(f"**{item.replace('_', ' ').title()}**: {tip}")
+    else:
+        st.success(f"🟢 **NOT PLASTIC** (Confidence: {confidence*100:.1f}%)")
+        st.info("✅ Not plastic. Dispose responsibly.")
 
 # UI
 st.title("🌍 Plastic Detector AI")
@@ -115,19 +96,8 @@ with tab1:
             
         with col2:
             with st.spinner("Analyzing..."):
-                results, is_plastic, plastic_type = predict_image(image)
-                
-                if is_plastic:
-                    st.error("🔴 **PLASTIC DETECTED**")
-                    tip = RECYCLING_TIPS.get(plastic_type, "♻️ Check local recycling guidelines")
-                    st.info(tip)
-                else:
-                    st.success("🟢 **NOT PLASTIC**")
-                    st.info("✅ This item is likely not plastic. Still, always recycle when possible!")
-                
-                st.write("**Top Predictions:**")
-                for label, conf in results[:3]:
-                    st.write(f"• {label}: {conf*100:.1f}%")
+                is_plastic, confidence = predict_image(image)
+                display_results(is_plastic, confidence)
 
 with tab2:
     st.markdown("### Point your camera at an item to detect plastic")
@@ -137,19 +107,8 @@ with tab2:
         image = Image.open(camera_image)
         
         with st.spinner("Analyzing..."):
-            results, is_plastic, plastic_type = predict_image(image)
-            
-            if is_plastic:
-                st.error("🔴 **PLASTIC DETECTED**")
-                tip = RECYCLING_TIPS.get(plastic_type, "♻️ Check local guidelines")
-                st.info(tip)
-            else:
-                st.success("🟢 **NOT PLASTIC**")
-                st.info("✅ Not plastic. Dispose responsibly.")
-            
-            st.write("**Top Predictions:**")
-            for label, conf in results[:3]:
-                st.write(f"• {label}: {conf*100:.1f}%")
+            is_plastic, confidence = predict_image(image)
+            display_results(is_plastic, confidence)
 
 st.markdown("---")
-st.markdown("💡 **Tip:** Hold plastic items in good lighting for best results!")
+st.markdown("💡 **Tip:** Hold items in good lighting for best results!")
