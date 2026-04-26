@@ -4,3 +4,9 @@ gradio
 Pillow
 numpy
 opencv-python-headless
+streamlit
+streamlit-folium
+folium
+ultralytics
+matplotlib
+pandas
