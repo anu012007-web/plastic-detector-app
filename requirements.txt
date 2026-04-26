@@ -8,5 +8,5 @@ streamlit
 streamlit-folium
 folium
 ultralytics
-matplotlib
 pandas
+plotly
