@@ -1,6 +1,6 @@
 {
-  "name": "Swachh Plastic Detector",
-  "short_name": "Plastic Detector",
+  "name": "GreenLens",
+  "short_name": "GreenLens",
   "description": "AI-powered plastic detector for Swachh Bharat Mission",
   "start_url": "./",
   "display": "standalone",

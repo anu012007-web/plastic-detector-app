@@ -19,7 +19,7 @@ import json
 # ==========================================
 # CONFIG & INIT
 # ==========================================
-st.set_page_config(page_title="EcoScan", page_icon="🌿", layout="wide")
+st.set_page_config(page_title="GreenLens", page_icon="🌿", layout="wide")
 
 # Database Init
 def init_db():
@@ -45,15 +45,15 @@ conn = init_db()
 # MULTILINGUAL DICTIONARIES
 # ==========================================
 LANGUAGES = {
-    "English": {"title": "EcoScan", "hero": "Empowering a Cleaner India", "upload": "Upload Image", "camera": "Use Camera", "detect": "Detect Plastic", "plastic_detected": "PLASTIC DETECTED!", "not_plastic": "NOT PLASTIC", "admin": "Admin Dashboard", "paper": "Research Paper", "map": "Pollution Map"},
-    "Hindi (हिन्दी)": {"title": "EcoScan", "hero": "स्वच्छ भारत की ओर एक कदम", "upload": "फोटो अपलोड करें", "camera": "कैमरा इस्तेमाल करें", "detect": "प्लास्टिक पहचानें", "plastic_detected": "प्लास्टिक मिला!", "not_plastic": "प्लास्टिक नहीं है", "admin": "एडमिन डैशबोर्ड", "paper": "शोध पत्र", "map": "प्रदूषण का नक्शा"},
-    "Tamil (தமிழ்)": {"title": "EcoScan", "hero": "தூய்மையான இந்தியா", "upload": "படத்தை பதிவேற்றவும்", "camera": "கேமரா", "detect": "கண்டுபிடி", "plastic_detected": "பிளாஸ்டிக் உள்ளது!", "not_plastic": "பிளாஸ்டிக் இல்லை", "admin": "நிர்வாகி", "paper": "ஆராய்ச்சி", "map": "வரைபடம்"},
-    "Telugu (తెలుగు)": {"title": "EcoScan", "hero": "క్లీన్ ఇండియా", "upload": "చిత్రాన్ని అప్‌లోడ్ చేయండి", "camera": "కెమెరా", "detect": "గుర్తించు", "plastic_detected": "ప్లాస్టిక్ దొరికింది!", "not_plastic": "ప్లాస్టిక్ కాదు", "admin": "అడ్మిన్", "paper": "పరిశోధన", "map": "మ్యాప్"},
-    "Kannada (ಕನ್ನಡ)": {"title": "EcoScan", "hero": "ಸ್ವಚ್ಛ ಭಾರತ", "upload": "ಚಿತ್ರವನ್ನು ಅಪ್ಲೋಡ್ ಮಾಡಿ", "camera": "ಕ್ಯಾಮೆರಾ", "detect": "ಪತ್ತೆಮಾಡಿ", "plastic_detected": "ಪ್ಲಾಸ್ಟಿಕ್ ಪತ್ತೆಯಾಗಿದೆ!", "not_plastic": "ಪ್ಲಾಸ್ಟಿಕ್ ಅಲ್ಲ", "admin": "ಆಡಳಿತ", "paper": "ಸಂಶೋಧನೆ", "map": "ನಕ್ಷೆ"},
-    "Bengali (বাংলা)": {"title": "EcoScan", "hero": "পরিষ্কার ভারত", "upload": "ছবি আপলোড করুন", "camera": "ক্যামেরা", "detect": "শনাক্ত করুন", "plastic_detected": "প্লাস্টিক সনাক্ত হয়েছে!", "not_plastic": "প্লাস্টিক নয়", "admin": "অ্যাডমিন", "paper": "গবেষণা", "map": "মানচিত্র"},
-    "Marathi (मराठी)": {"title": "EcoScan", "hero": "स्वच्छ भारत", "upload": "फोटो अपलोड करा", "camera": "कॅमेरा", "detect": "ओळखा", "plastic_detected": "प्लास्टिक आढळले!", "not_plastic": "प्लास्टिक नाही", "admin": "अॅडमिन", "paper": "संशोधन", "map": "नकाशा"},
-    "Gujarati (ગુજરાતી)": {"title": "EcoScan", "hero": "સ્વચ્છ ભારત", "upload": "ફોટો અપલોડ કરો", "camera": "કેમેરા", "detect": "શોધો", "plastic_detected": "પ્લાસ્ટિક મળ્યું!", "not_plastic": "પ્લાસ્ટિક નથી", "admin": "એડમિન", "paper": "સંશોધન", "map": "નકશો"},
-    "Malayalam (മലയാളം)": {"title": "EcoScan", "hero": "ക്ലീൻ ഇന്ത്യ", "upload": "ചിത്രം അപ്‌ലോഡ് ചെയ്യുക", "camera": "ക്യാമറ", "detect": "കണ്ടെത്തുക", "plastic_detected": "പ്ലാസ്റ്റിക് കണ്ടെത്തി!", "not_plastic": "പ്ലാസ്റ്റിക് അല്ല", "admin": "അഡ്മിൻ", "paper": "ഗവേഷണം", "map": "മാപ്പ്"}
+    "English": {"title": "GreenLens", "hero": "See Plastic. Save Planet.", "upload": "Upload Image", "camera": "Use Camera", "detect": "Detect Plastic", "plastic_detected": "PLASTIC DETECTED!", "not_plastic": "NOT PLASTIC", "admin": "Admin Dashboard", "paper": "Research Paper", "map": "Pollution Map"},
+    "Hindi (हिन्दी)": {"title": "GreenLens", "hero": "स्वच्छ भारत की ओर एक कदम", "upload": "फोटो अपलोड करें", "camera": "कैमरा इस्तेमाल करें", "detect": "प्लास्टिक पहचानें", "plastic_detected": "प्लास्टिक मिला!", "not_plastic": "प्लास्टिक नहीं है", "admin": "एडमिन डैशबोर्ड", "paper": "शोध पत्र", "map": "प्रदूषण का नक्शा"},
+    "Tamil (தமிழ்)": {"title": "GreenLens", "hero": "தூய்மையான இந்தியா", "upload": "படத்தை பதிவேற்றவும்", "camera": "கேமரா", "detect": "கண்டுபிடி", "plastic_detected": "பிளாஸ்டிக் உள்ளது!", "not_plastic": "பிளாஸ்டிக் இல்லை", "admin": "நிர்வாகி", "paper": "ஆராய்ச்சி", "map": "வரைபடம்"},
+    "Telugu (తెలుగు)": {"title": "GreenLens", "hero": "క్లీన్ ఇండియా", "upload": "చిత్రాన్ని అప్‌లోడ్ చేయండి", "camera": "కెమెరా", "detect": "గుర్తించు", "plastic_detected": "ప్లాస్టిక్ దొరికింది!", "not_plastic": "ప్లాస్టిక్ కాదు", "admin": "అడ్మిన్", "paper": "పరిశోధన", "map": "మ్యాప్"},
+    "Kannada (ಕನ್ನಡ)": {"title": "GreenLens", "hero": "ಸ್ವಚ್ಛ ಭಾರತ", "upload": "ಚಿತ್ರವನ್ನು ಅಪ್ಲೋಡ್ ಮಾಡಿ", "camera": "ಕ್ಯಾಮೆರಾ", "detect": "ಪತ್ತೆಮಾಡಿ", "plastic_detected": "ಪ್ಲಾಸ್ಟಿಕ್ ಪತ್ತೆಯಾಗಿದೆ!", "not_plastic": "ಪ್ಲಾಸ್ಟಿಕ್ ಅಲ್ಲ", "admin": "ಆಡಳಿತ", "paper": "ಸಂಶೋಧನೆ", "map": "ನಕ್ಷೆ"},
+    "Bengali (বাংলা)": {"title": "GreenLens", "hero": "পরিষ্কার ভারত", "upload": "ছবি আপলোড করুন", "camera": "ক্যামেরা", "detect": "শনাক্ত করুন", "plastic_detected": "প্লাস্টিক সনাক্ত হয়েছে!", "not_plastic": "প্লাস্টিক নয়", "admin": "অ্যাডমিন", "paper": "গবেষণা", "map": "মানচিত্র"},
+    "Marathi (मराठी)": {"title": "GreenLens", "hero": "स्वच्छ भारत", "upload": "फोटो अपलोड करा", "camera": "कॅमेरा", "detect": "ओळखा", "plastic_detected": "प्लास्टिक आढळले!", "not_plastic": "प्लास्टिक नाही", "admin": "अॅडमिन", "paper": "संशोधन", "map": "नकाशा"},
+    "Gujarati (ગુજરાતી)": {"title": "GreenLens", "hero": "સ્વચ્છ ભારત", "upload": "ફોટો અપલોડ કરો", "camera": "કેમેરા", "detect": "શોધો", "plastic_detected": "પ્લાસ્ટિક મળ્યું!", "not_plastic": "પ્લાસ્ટિક નથી", "admin": "એડમિન", "paper": "સંશોધન", "map": "નકશો"},
+    "Malayalam (മലയാളം)": {"title": "GreenLens", "hero": "ക്ലീൻ ഇന്ത്യ", "upload": "ചിത്രം അപ്‌ലോഡ് ചെയ്യുക", "camera": "ക്യാമറ", "detect": "കണ്ടെത്തുക", "plastic_detected": "പ്ലാസ്റ്റിക് കണ്ടെത്തി!", "not_plastic": "പ്ലാസ്റ്റിക് അല്ല", "admin": "അഡ്മിൻ", "paper": "ഗവേഷണം", "map": "മാപ്പ്"}
 }
 
 if 'lang' not in st.session_state: st.session_state.lang = "English"
@@ -341,8 +341,9 @@ st.sidebar.markdown(f"### 🌿 {t('title')}")
 
 st.markdown(f"""
 <div class="hero-banner">
-    <div class="swachh-title"><i class="fa-solid fa-leaf" style="color: var(--fresh-green)"></i> {t('title')}</div>
+    <div class="swachh-title"><i class="fa-solid fa-leaf" style="color: var(--fresh-green)"></i> GreenLens - AI Plastic Detector</div>
     <div class="swachh-subtitle">{t('hero')}</div>
+    <div style="margin-top: 15px; font-size: 1.2rem; font-weight: bold; color: var(--deep-blue);">GreenLens: Empowering Swachh Bharat with AI Vision</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -389,7 +390,7 @@ with tab1:
             if count > 0: 
                 st.markdown(f'<div class="bounding-box-info"><i class="fa-solid fa-crosshairs"></i> Detected {count} distinct plastic items: {", ".join(set(p_types))}</div>', unsafe_allow_html=True)
             
-            wa_text = f"EcoScan Alert! 🚨 I just detected plastic waste using AI with {conf:.1%} confidence. Let's protect our environment! 🌿"
+            wa_text = f"GreenLens Alert! 🚨 I just detected plastic waste using AI with {conf:.1%} confidence. Let's protect our environment! 🌿"
             wa_url = f"https://wa.me/?text={st.session_state.lang}%20{wa_text.replace(' ', '%20')}"
             st.markdown(f'<a href="{wa_url}" target="_blank" class="gradient-btn"><i class="fa-brands fa-whatsapp"></i> Share on WhatsApp</a>', unsafe_allow_html=True)
             
@@ -431,9 +432,10 @@ with tab3:
         
         st.dataframe(df_all)
         csv = df_all.to_csv(index=False).encode('utf-8')
-        st.download_button("Download CSV Report", csv, "ecoscan_report.csv", "text/csv")
+        st.download_button("Download CSV Report", csv, "greenlens_report.csv", "text/csv")
     elif pwd:
         st.error("Incorrect password")
 
 st.markdown("---")
-st.markdown("<div style='text-align: center; color: gray;'>Powered by EcoScan AI</div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align: center; color: gray;'>Powered by GreenLens AI</div>", unsafe_allow_html=True)
+
