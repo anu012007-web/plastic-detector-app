@@ -1,6 +1,6 @@
 {
-  "name": "GreenLens",
-  "short_name": "GreenLens",
+  "name": "EcoScanIndia",
+  "short_name": "EcoScanIndia",
   "description": "AI-powered plastic detector for Swachh Bharat Mission",
   "start_url": "./",
   "display": "standalone",

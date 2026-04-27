@@ -1,4 +1,4 @@
-# ♻️ Plastic Detector AI
+# ♻️ EcoScanIndia
 
 This project is a simple web application that detects if an uploaded image contains a plastic object using a pre-trained **MobileNetV2** artificial intelligence model.
 
