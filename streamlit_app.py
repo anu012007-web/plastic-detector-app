@@ -260,7 +260,7 @@ def load_mobilenet():
 
 @st.cache_resource
 def load_yolo():
-    return YOLO('yolov8n.pt')
+    return YOLO('yolov8s.pt')
 
 mn_model = load_mobilenet()
 yolo_model = load_yolo()
@@ -288,14 +288,31 @@ def predict_mobilenet(image):
     return is_plastic, conf, inf_time, image
 
 def predict_yolo(image):
+    # Image preprocessing: zoom slightly on center for small objects
+    zoom_factor = 1.2
+    width, height = image.size
+    new_width = width / zoom_factor
+    new_height = height / zoom_factor
+    left = (width - new_width) / 2
+    top = (height - new_height) / 2
+    right = (width + new_width) / 2
+    bottom = (height + new_height) / 2
+    
+    try:
+        resample_filter = Image.Resampling.LANCZOS
+    except AttributeError:
+        resample_filter = Image.LANCZOS
+        
+    zoomed_image = image.crop((left, top, right, bottom)).resize((width, height), resample_filter)
+
     start_time = datetime.datetime.now()
-    results = yolo_model(image)
+    results = yolo_model(zoomed_image, imgsz=1280)
     inf_time = (datetime.datetime.now() - start_time).total_seconds() * 1000
     
     # COCO Plastic classes: bottle (39), cup (41), spoon (44), bowl (45)
     plastic_classes = [39, 41, 44, 45]
     
-    img_cv = np.array(image)
+    img_cv = np.array(zoomed_image)
     if len(img_cv.shape) == 3 and img_cv.shape[2] == 3:
         img_cv = cv2.cvtColor(img_cv, cv2.COLOR_RGB2BGR)
         
