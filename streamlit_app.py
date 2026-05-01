@@ -1,25 +1,11 @@
 import streamlit as st
 import os
-import sys
-import subprocess
 
 # Force headless OpenCV before any other imports
 os.environ['OPENCV_IO_ENABLE_OPENEXR'] = '1'
 
-try:
-    import cv2
-    # Ensure cv2 doesn't have missing system libraries
-    cv2.Mat 
-    from ultralytics import YOLO
-except (ImportError, AttributeError):
-    st.info("Installing system dependencies dynamically. Please wait 30 seconds...")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "ultralytics"])
-    subprocess.check_call([sys.executable, "-m", "pip", "uninstall", "-y", "opencv-python", "opencv-python-headless"])
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "opencv-python-headless"])
-    try:
-        st.rerun()
-    except AttributeError:
-        st.experimental_rerun()
+import cv2
+from ultralytics import YOLO
 
 import torch
 import torch.nn as nn
