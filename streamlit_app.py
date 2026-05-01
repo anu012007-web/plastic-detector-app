@@ -1,18 +1,33 @@
 import streamlit as st
+import os
+
+# Force headless OpenCV before any other imports
+os.environ['OPENCV_IO_ENABLE_OPENEXR'] = '1'
+
+try:
+    import cv2
+    # Ensure cv2 doesn't have missing system libraries
+    cv2.Mat 
+    from ultralytics import YOLO
+except (ImportError, AttributeError):
+    os.system("pip install ultralytics")
+    os.system("pip uninstall -y opencv-python opencv-python-headless")
+    os.system("pip install opencv-python-headless")
+    import cv2
+    from ultralytics import YOLO
+
 import torch
 import torch.nn as nn
 import torchvision.models as models
 import torchvision.transforms as transforms
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
-import cv2
 import sqlite3
 import pandas as pd
 import datetime
 import base64
 import folium
 from streamlit_folium import st_folium
-from ultralytics import YOLO
 import hashlib
 import json
 
