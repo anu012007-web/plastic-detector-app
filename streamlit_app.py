@@ -4,7 +4,6 @@ import os
 # Force headless OpenCV before any other imports
 os.environ['OPENCV_IO_ENABLE_OPENEXR'] = '1'
 
-import cv2
 from ultralytics import YOLO
 
 import torch
@@ -318,16 +317,15 @@ def predict_yolo(image):
     # COCO Plastic classes: bottle (39), cup (41), spoon (44), bowl (45)
     plastic_classes = [39, 41, 44, 45]
     
-    img_cv = np.array(zoomed_image)
-    if len(img_cv.shape) == 3 and img_cv.shape[2] == 3:
-        img_cv = cv2.cvtColor(img_cv, cv2.COLOR_RGB2BGR)
+    draw = ImageDraw.Draw(zoomed_image)
+    font = ImageFont.load_default()
         
     detected_count = 0
     types_found = []
     max_conf = 0
     
-    # Indian Flag Colors (BGR for OpenCV)
-    colors = [(51, 153, 255), (255, 255, 255), (19, 136, 8)] # Saffron, White, Green
+    # Indian Flag Colors (RGB for PIL)
+    colors = [(255, 153, 51), (255, 255, 255), (8, 136, 19)] # Saffron, White, Green
     
     for i, box in enumerate(results[0].boxes):
         cls_id = int(box.cls[0].item())
@@ -341,14 +339,15 @@ def predict_yolo(image):
                 
             x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
             color = colors[i % 3]
-            cv2.rectangle(img_cv, (x1, y1), (x2, y2), color, 3)
+            draw.rectangle([x1, y1, x2, y2], outline=color, width=3)
             label = f"{yolo_model.names[cls_id]} {conf:.2f}"
-            cv2.putText(img_cv, label, (x1, max(y1-10, 0)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
             
-    img_out = cv2.cvtColor(img_cv, cv2.COLOR_BGR2RGB)
-    
+            # Draw text with simple shadow for visibility
+            draw.text((x1+1, max(y1-15, 0)+1), label, fill=(0,0,0), font=font)
+            draw.text((x1, max(y1-15, 0)), label, fill=color, font=font)
+            
     is_plastic = detected_count > 0
-    return is_plastic, max_conf, inf_time, Image.fromarray(img_out), detected_count, types_found
+    return is_plastic, max_conf, inf_time, zoomed_image, detected_count, types_found
 
 def log_detection(model_name, p_type, conf, count, inf_time, img):
     img_hash = hashlib.md5(img.tobytes()).hexdigest()
