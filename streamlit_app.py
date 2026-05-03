@@ -54,6 +54,43 @@ if 'lang' not in st.session_state: st.session_state.lang = "English"
 
 def t(key): return LANGUAGES[st.session_state.lang].get(key, LANGUAGES["English"].get(key, key))
 
+def get_translated_text(key, lang):
+    """Returns translated text for the given key and language"""
+    return LANGUAGES.get(lang, LANGUAGES["English"]).get(key, LANGUAGES["English"].get(key, key))
+
+def display_result_in_language(verdict, confidence, item_count, recycling_tip, lang):
+    """Displays all results in the selected language"""
+    is_p = verdict == get_translated_text("plastic_detected", lang)
+    
+    if is_p:
+        st.markdown(f'''
+        <div class="result-card">
+            <h2><i class="fa-solid fa-trash-can" style="color: #FF9933"></i> {verdict}</h2>
+            <p><i class="fa-solid fa-bullseye"></i> {get_translated_text("confidence", lang)}: {confidence:.1%}</p>
+            <div class="confidence-bar">
+                <div class="confidence-fill" style="width: {confidence*100}%;"></div>
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+        if item_count > 0: 
+            st.markdown(f'<div class="bounding-box-info"><i class="fa-solid fa-crosshairs"></i> {item_count} {get_translated_text("found_items", lang)}</div>', unsafe_allow_html=True)
+        
+        wa_text = f"EcoScanIndia Alert! 🚨 I just detected plastic waste using AI with {confidence:.1%} confidence. Let's protect our environment! 🌿"
+        wa_url = f"https://wa.me/?text={lang}%20{wa_text.replace(' ', '%20')}"
+        st.markdown(f'<a href="{wa_url}" target="_blank" class="gradient-btn"><i class="fa-brands fa-whatsapp"></i> Share on WhatsApp</a>', unsafe_allow_html=True)
+            
+        st.markdown(f'<div class="tip-card"><i class="fa-solid fa-recycle"></i> {get_translated_text("recycling_tip", lang)}:<br>{recycling_tip}</div>', unsafe_allow_html=True)
+    else:
+        st.markdown(f'''
+        <div class="result-card" style="background: linear-gradient(135deg, #138808 0%, #4CAF50 100%);">
+            <h2><i class="fa-solid fa-leaf" style="color: white"></i> {verdict}</h2>
+            <p><i class="fa-solid fa-bullseye"></i> {get_translated_text("confidence", lang)}: {confidence:.1%}</p>
+            <div class="confidence-bar">
+                <div class="confidence-fill" style="width: {confidence*100}%;"></div>
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+
 # ==========================================
 # CSS & PWA INJECTION
 # ==========================================
@@ -265,6 +302,10 @@ def load_mobilenet():
 
 @st.cache_resource
 def load_yolo():
+    model_files = ['yolov26n.pt', 'yolo26n.pt', 'yolov8s.pt']
+    for f in model_files:
+        if os.path.exists(f):
+            return YOLO(f)
     return YOLO('yolov8s.pt')
 
 mn_model = load_mobilenet()
@@ -323,6 +364,7 @@ def predict_yolo(image):
     detected_count = 0
     types_found = []
     max_conf = 0
+    max_non_plastic_conf = 0
     
     # Indian Flag Colors (RGB for PIL)
     colors = [(255, 153, 51), (255, 255, 255), (8, 136, 19)] # Saffron, White, Green
@@ -336,6 +378,8 @@ def predict_yolo(image):
                 detected_count += 1
                 types_found.append(yolo_model.names[cls_id])
                 max_conf = max(max_conf, conf)
+            else:
+                max_non_plastic_conf = max(max_non_plastic_conf, conf)
                 
             x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
             color = colors[i % 3]
@@ -347,7 +391,8 @@ def predict_yolo(image):
             draw.text((x1, max(y1-15, 0)), label, fill=color, font=font)
             
     is_plastic = detected_count > 0
-    return is_plastic, max_conf, inf_time, zoomed_image, detected_count, types_found
+    final_conf = max_conf if is_plastic else (max_non_plastic_conf if max_non_plastic_conf > 0 else 0.95)
+    return is_plastic, final_conf, inf_time, zoomed_image, detected_count, types_found
 
 def log_detection(model_name, p_type, conf, count, inf_time, img):
     img_hash = hashlib.md5(img.tobytes()).hexdigest()
@@ -396,49 +441,24 @@ with tab1:
                 is_p_y, conf_y, inf_y, box_img, count_y, types_y = predict_yolo(img)
                 is_p, conf, inf, overlay = is_p_y, conf_y, inf_y, box_img
                 count, p_types = count_y, types_y
-                log_detection("YOLOv8", ",".join(p_types) if p_types else "none", conf, count, inf, img)
+                log_detection("YOLO26n", ",".join(p_types) if p_types else "none", conf, count, inf, img)
                 
         c1, c2 = st.columns(2)
         c1.image(img, caption="Original Image", use_container_width=True)
         c2.image(overlay if overlay is not None else img, caption="AI Analysis Result", use_container_width=True)
         
+        verdict = get_translated_text("plastic_detected" if is_p else "not_plastic", st.session_state.lang)
+        
+        tips_html = ""
         if is_p:
-            st.markdown(f'''
-            <div class="result-card">
-                <h2><i class="fa-solid fa-trash-can" style="color: #FF9933"></i> {t("plastic_detected")}</h2>
-                <p><i class="fa-solid fa-bullseye"></i> {t("confidence")}: {conf:.1%}</p>
-                <div class="confidence-bar">
-                    <div class="confidence-fill" style="width: {conf*100}%;"></div>
-                </div>
-            </div>
-            ''', unsafe_allow_html=True)
-            if count > 0: 
-                st.markdown(f'<div class="bounding-box-info"><i class="fa-solid fa-crosshairs"></i> {t("found_x_items").format(count=count)}: {", ".join(set(p_types))}</div>', unsafe_allow_html=True)
-            
-            wa_text = f"EcoScanIndia Alert! 🚨 I just detected plastic waste using AI with {conf:.1%} confidence. Let's protect our environment! 🌿"
-            wa_url = f"https://wa.me/?text={st.session_state.lang}%20{wa_text.replace(' ', '%20')}"
-            st.markdown(f'<a href="{wa_url}" target="_blank" class="gradient-btn"><i class="fa-brands fa-whatsapp"></i> Share on WhatsApp</a>', unsafe_allow_html=True)
-            
-            tips_html = ""
             for p_type in set(p_types):
                 tip_key = f"{p_type}_tip"
                 if tip_key in LANGUAGES["English"]:
                     tips_html += f'<div style="margin-bottom: 5px;">{t(tip_key)}</div>'
-            
             if not tips_html:
                 tips_html = f"Please segregate this plastic and dispose of it responsibly! ♻️"
                 
-            st.markdown(f'<div class="tip-card"><i class="fa-solid fa-recycle"></i> {t("recycling_tips")}:<br>{tips_html}</div>', unsafe_allow_html=True)
-        else:
-            st.markdown(f'''
-            <div class="result-card" style="background: linear-gradient(135deg, #138808 0%, #4CAF50 100%);">
-                <h2><i class="fa-solid fa-leaf" style="color: white"></i> {t("not_plastic")}</h2>
-                <p><i class="fa-solid fa-bullseye"></i> {t("confidence")}: {conf:.1%}</p>
-                <div class="confidence-bar">
-                    <div class="confidence-fill" style="width: {conf*100}%;"></div>
-                </div>
-            </div>
-            ''', unsafe_allow_html=True)
+        display_result_in_language(verdict, conf, count, tips_html, st.session_state.lang)
 
 with tab2:
     st.markdown(f'<h2><i class="fa-solid fa-earth-asia icon-header"></i> {t("map")}</h2>', unsafe_allow_html=True)
