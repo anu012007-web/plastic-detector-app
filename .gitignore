@@ -2,3 +2,6 @@
 *.pth
 *.db
 __pycache__/
+raw_data/
+dataset/
+scratch/
