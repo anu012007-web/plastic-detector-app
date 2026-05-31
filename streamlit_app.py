@@ -409,6 +409,183 @@ st.sidebar.selectbox(t("select_lang"), list(LANGUAGES.keys()), key="lang")
 st.sidebar.markdown("---")
 st.sidebar.markdown(f"### 🌿 {t('title')}")
 
+# Dynamic Robot Status Widget
+def get_robot_status():
+    # 1. Attempt to read from the local SQLite database (for local deployment)
+    try:
+        conn = sqlite3.connect('detections.db', check_same_thread=False)
+        c = conn.cursor()
+        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='robot_status'")
+        if c.fetchone():
+            c.execute("""
+                SELECT timestamp, battery, shield_position, rain_sensor, is_raining, is_docked, mode, temperature, humidity 
+                FROM robot_status 
+                ORDER BY id DESC LIMIT 1
+            """)
+            row = c.fetchone()
+            conn.close()
+            if row:
+                return {
+                    "timestamp": row[0],
+                    "battery": row[1],
+                    "shield_position": row[2],
+                    "rain_sensor": row[3],
+                    "is_raining": bool(row[4]),
+                    "is_docked": bool(row[5]),
+                    "mode": row[6],
+                    "temperature": row[7],
+                    "humidity": row[8]
+                }
+        else:
+            conn.close()
+    except Exception:
+        pass
+
+    # 2. Fallback to querying the FastAPI webhook receiver API (for Streamlit Cloud deployment)
+    # Define ROBOT_API_URL in your Streamlit Secrets (.streamlit/secrets.toml)
+    api_url = None
+    try:
+        if "secrets" in dir(st) and "ROBOT_API_URL" in st.secrets:
+            api_url = st.secrets["ROBOT_API_URL"]
+    except Exception:
+        pass
+
+    if api_url:
+        try:
+            res = requests.get(f"{api_url}/api/robot/status", timeout=2.0)
+            if res.status_code == 200:
+                data = res.json()
+                if "timestamp" in data:
+                    return data
+        except Exception:
+            pass
+            
+    return None
+
+
+def display_robot_status():
+    status = get_robot_status()
+    if not status:
+        st.sidebar.markdown("""
+        <div style="background: rgba(0,0,0,0.05); padding: 12px; border-radius: 12px; font-size: 0.85rem; color: #666; margin-top: 15px; text-align: center;">
+            📡 Waiting for EcoScanIndia robot signal...
+        </div>
+        """, unsafe_allow_html=True)
+        return
+
+    # Formatting Battery Color & Emoji
+    battery = status["battery"]
+    if battery >= 70:
+        battery_color = "#138808" # Green
+        battery_emoji = "🟢"
+    elif battery >= 30:
+        battery_color = "#FF9933" # Yellow/Saffron
+        battery_emoji = "🟡"
+    else:
+        battery_color = "#D32F2F" # Red
+        battery_emoji = "🔴"
+
+    # Formatting Shield Position
+    shield = status["shield_position"]
+    if shield == "DEPLOYED":
+        shield_str = "DEPLOYED 🛡️☔"
+        shield_color = "#FF9933"
+    else:
+        shield_str = "RETRACTED 🛡️"
+        shield_color = "#138808"
+
+    # Formatting Rain Sensor
+    sensor = status["rain_sensor"]
+    sensor_str = "WET ☔" if sensor == "WET" else "DRY ☀️"
+    sensor_color = "#2196F3" if sensor == "WET" else "#9E9E9E"
+
+    # Formatting Docked Status
+    docked_str = "DOCKED 🏠" if status["is_docked"] else "PATROLLING 🚶"
+    docked_color = "#7E57C2" if status["is_docked"] else "#4CAF50"
+
+    # Formatting Mode
+    mode_str = "MANUAL_OVERRIDE" if status["mode"] == "MANUAL_OVERRIDE" else "AUTO"
+    mode_color = "#E91E63" if status["mode"] == "MANUAL_OVERRIDE" else "#1E3A5F"
+
+    # Formatting last update time
+    try:
+        dt = datetime.datetime.fromisoformat(status["timestamp"])
+        time_str = dt.strftime("%I:%M:%S %p")
+    except Exception:
+        time_str = status["timestamp"]
+
+    # Optional temp & humidity
+    temp_hum_html = ""
+    if status["temperature"] is not None and status["humidity"] is not None:
+        temp_hum_html = f"""
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem;">
+            <span style="color: #555; font-weight: 500;">Environment:</span>
+            <span style="font-weight: bold; color: #1E3A5F;">{status['temperature']:.1f}°C | {status['humidity']:.0f}% RH</span>
+        </div>
+        """
+
+    # Render CSS-styled Status Box
+    st.sidebar.markdown(f"""
+    <div style="background: rgba(255, 153, 51, 0.1); padding: 15px; border-radius: 15px; border: 1px solid rgba(255, 153, 51, 0.3); margin-top: 15px; font-family: 'Outfit', sans-serif;">
+        <h4 style="margin-top: 0; margin-bottom: 12px; color: #1E3A5F; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 8px;">
+            🤖 EcoScan Robot Status
+        </h4>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem;">
+            <span style="color: #555; font-weight: 500;">Battery:</span>
+            <span style="font-weight: bold; color: {battery_color};">{battery_emoji} {battery}%</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem;">
+            <span style="color: #555; font-weight: 500;">Shield:</span>
+            <span style="font-weight: bold; color: {shield_color};">{shield_str}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem;">
+            <span style="color: #555; font-weight: 500;">Rain Sensor:</span>
+            <span style="font-weight: bold; color: {sensor_color};">{sensor_str}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem;">
+            <span style="color: #555; font-weight: 500;">Status:</span>
+            <span style="font-weight: bold; color: {docked_color};">{docked_str}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem;">
+            <span style="color: #555; font-weight: 500;">Mode:</span>
+            <span style="font-weight: bold; color: {mode_color};">{mode_str}</span>
+        </div>
+        {temp_hum_html}
+        <div style="font-size: 0.75rem; color: #888; text-align: right; margin-top: 12px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 8px;">
+            Updated: {time_str}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Refresh Button in Sidebar
+    if st.sidebar.button("🔄 Refresh Status", key="refresh_status_btn", use_container_width=True):
+        st.rerun()
+
+    # JS Periodic Rerun
+    st.components.v1.html(
+        """
+        <script>
+            const parentWindow = window.parent;
+            if (parentWindow && !parentWindow.statusIntervalSet) {
+                parentWindow.statusIntervalSet = true;
+                setInterval(function() {
+                    const buttons = parentWindow.document.querySelectorAll('button');
+                    const refreshBtn = Array.from(buttons).find(el => el.textContent.includes('Refresh Status') || el.textContent.includes('🔄'));
+                    if (refreshBtn) {
+                        refreshBtn.click();
+                    }
+                }, 15000);
+            }
+        </script>
+        """,
+        height=0,
+        width=0
+    )
+
+display_robot_status()
+
+
+
 st.markdown(f"""
 <div class="hero-banner">
     <div class="swachh-title"><i class="fa-solid fa-leaf" style="color: var(--fresh-green)"></i> EcoScanIndia</div>

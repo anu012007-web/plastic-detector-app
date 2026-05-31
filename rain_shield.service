@@ -1,0 +1,16 @@
+[Unit]
+Description=EcoScanIndia Robot Automatic Rain Shield System
+After=network.target
+
+[Service]
+Type=simple
+# On newer Raspberry Pi OS, the default user may be different (e.g. your username).
+# Customize the User and WorkingDirectory as appropriate.
+User=pi
+WorkingDirectory=/home/pi/EcoScanIndia
+ExecStart=/usr/bin/python3 /home/pi/EcoScanIndia/rain_shield.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
